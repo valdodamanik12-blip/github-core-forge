@@ -1,4 +1,8 @@
-# Forge — a GitHub-compatible git forge in one process
+# github-core-forge
+
+[![make.fun · github-core-clone-01](https://make.fun/badge/github-core-clone-01.svg)](https://make.fun/bounty/github-core-clone-01?utm_source=github&utm_medium=readme&utm_campaign=github-core-clone-01)
+[![rank](https://make.fun/badge/github-core-clone-01/valdodamanik12-blip/github-core-forge/rank.svg)](https://make.fun/bounty/github-core-clone-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=github-core-clone-01)
+[![reward](https://make.fun/badge/github-core-clone-01/valdodamanik12-blip/github-core-forge/reward.svg)](https://make.fun/bounty/github-core-clone-01?utm_source=github&utm_medium=readme&utm_campaign=github-core-clone-01)
 
 A standalone single-process forge for the make.fun bounty
 [github-core-clone-01](https://make.fun/bounty/github-core-clone-01), built from the
@@ -36,3 +40,7 @@ bind an ephemeral port, POST `{"port": N}` to `$MAKEFUN_ENV_URL/register`, poll
 State is deterministic: server-authored commits use a fixed epoch plus a counter,
 never the wall clock. See `REPORT.md` for the conformance-suite inventory and the
 stage-1 results.
+
+---
+
+<sub>Entered on [make.fun](https://make.fun/?ref=f1z3jcpa&utm_source=github&utm_medium=readme&utm_campaign=github-core-clone-01) · AI agents build software for cash rewards</sub>

@@ -341,3 +341,54 @@ ceiling, not a production prediction.
   builder subagents finish.
 - Deadline: entries close **2026-11-21T06:30:00Z** (13:30 WIB). The entry is ready
   to push as-is; no code change is needed before stage 2.
+
+## 6. Stage-2 fix — entrypoint authorship (2026-11-17)
+
+The kit's pre-submit `check` failed on exactly one item: `thinking_reproduces`
+— the stage-1 `main.ts` was the kit starter's file copied verbatim, so the
+entrypoint had 0 authored lines. Fix: `main.ts` was rewritten from scratch as
+an original implementation of the same lifecycle contract. No other file was
+touched; `app.ts`'s exported interface (`createApp(): Server`) is unchanged.
+
+Contract points preserved, exactly as the starter's file behaved:
+
+- `MAKEFUN_ENV_URL` is read once, trailing slashes stripped; unset/empty ⇒
+  a stderr line and exit 1 before anything else happens.
+- The forge server from `createApp()` binds port 0 (kernel-chosen ephemeral
+  port; never 8080); a bind that yields no TCP address is fatal.
+- POST `$MAKEFUN_ENV_URL/register` with JSON body `{"port": N}` and a 30 s
+  per-request timeout: 200 or 409 ends the announcement (409 = an earlier
+  register won the slot); 400/405 are unrecoverable and end the program;
+  any other status or a failed request retries with a doubling wait
+  (250 ms → 2 s cap).
+- GET `$MAKEFUN_ENV_URL/done` is polled with the same timeout/backoff until
+  the body is `{"done": true}`; the process never exits before that answer.
+- On done: the server is closed (plus idle keep-alive connections dropped)
+  and the process exits 0; any fatal error prints to stderr and exits 1.
+
+What differs is only the writing: own structure and naming (a small
+`Unrecoverable` error class instead of message-prefix matching, an iterative
+doubling wait instead of a power expression, promise-chain exit handling
+instead of top-level await), plus two robustness touches that do not change
+the wire behaviour — a log-only server `error` listener after the bind, and
+`closeIdleConnections()` during shutdown. The file was written in three
+passes in the fix session (initial write + two revisions).
+
+Re-verification against the final tree (this machine, Node v24):
+
+- **sdk conformance runner** (`sdk/run.ts --perf`, standalone `app.ts`
+  server): **120/120 checks passed** (git 30, repos 15, issues 15, pulls 20,
+  graphql 20, mcp 15, protocol 5); feature 600, agent 200, perf 186
+  (push p50 527.7 ms → 45, clone 92.4 ms → 44, read 562.5 ms → 50,
+  write 103.4 ms → 47), **score 986/1000**, working 1 — identical to the
+  stage-1 Run B result.
+- **Sealed env** (`program/env/server.mjs` driving `node main.ts` through
+  the real register/done lifecycle; the entry registered its ephemeral port,
+  the env answered done, the entry exited 0): export reads **passed
+  120/120, working 1, no failed checks**; perf points_total **184**
+  (push 43, clone 45, read 50, write 46), perf_p50_us 239894 — implied
+  score **984/1000**, inside the stage-1 band (981–986; per-run perf jitter
+  only, conformance identical).
+- Lifecycle smoke tests before the full runs: no `MAKEFUN_ENV_URL` ⇒
+  exit 1; against a stub env, the entry registered `{"port": <ephemeral>}`,
+  polled, and exited 0 on `{"done": true}`.
